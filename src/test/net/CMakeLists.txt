@@ -4,4 +4,13 @@ add_executable(test_net)
 
 target_sources(test_net PRIVATE "net.cpp")
 
+target_include_directories(test_net PRIVATE
+	"../../"
+	"../../public"
+	"../../common"
+	"../../thirdparty"
+	"../../thirdparty/doctest"
+	"../../thirdparty/json/include"
+)
+
 target_link_libraries(test_net PRIVATE net)

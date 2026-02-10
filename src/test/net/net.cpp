@@ -4,6 +4,10 @@
 #include "testbasicfuncs.h"
 #include "testpacketsequence.h"
 
+// Stub for g_pServerConfig required by CTCPServer::Accept
+#include "serverconfig.h"
+CServerConfig* g_pServerConfig = nullptr;
+
 #define TEST_PORT "30002"
 
 using namespace std;
