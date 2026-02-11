@@ -9,6 +9,8 @@
 #include "common/logger.h"
 #include "common/utils.h"
 
+#include <algorithm>
+
 using namespace std;
 
 /**
