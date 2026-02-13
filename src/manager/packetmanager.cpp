@@ -7291,6 +7291,8 @@ void CPacketManager::SendVoxelURLs(IExtendedSocket* socket, const std::string& v
 // Without it the client crashes ~1 second after the lobby loads.
 void CPacketManager::SendContentList(IExtendedSocket* socket)
 {
+	Logger().Info("[PACKET_SEND] >>> SendContentList: Creating packet ID=%d (ContentList)", (int)PacketId::ContentList);
+	
 	CSendPacket* msg = CreatePacket(socket, PacketId::ContentList);
 	msg->BuildHeader();
 
@@ -7317,7 +7319,9 @@ void CPacketManager::SendContentList(IExtendedSocket* socket)
 	for (int i = 0; i < mapCount; i++)
 		msg->WriteUInt16(mapIds[i]);
 
+	Logger().Info("[PACKET_SEND] >>> SendContentList: Sending packet with %d maps", mapCount);
 	socket->Send(msg);
+	Logger().Info("[PACKET_SEND] >>> SendContentList: SENT");
 }
 
 // 2025 client: sends empty QuestBadgeShop list (ID=116).
@@ -7326,6 +7330,8 @@ void CPacketManager::SendContentList(IExtendedSocket* socket)
 // Each item: itemUID(u64) + unk(u32) + unk(u16) + unk(u16)
 void CPacketManager::SendQuestBadgeShop(IExtendedSocket* socket)
 {
+	Logger().Info("[PACKET_SEND] >>> SendQuestBadgeShop: Creating packet ID=%d (QuestBadgeShop)", (int)PacketId::QuestBadgeShop);
+	
 	CSendPacket* msg = CreatePacket(socket, PacketId::QuestBadgeShop);
 	msg->BuildHeader();
 
@@ -7333,7 +7339,9 @@ void CPacketManager::SendQuestBadgeShop(IExtendedSocket* socket)
 	msg->WriteUInt8(2);   // unk
 	msg->WriteUInt32(0);  // count = 0 (empty list)
 
+	Logger().Info("[PACKET_SEND] >>> SendQuestBadgeShop: Sending packet (empty list)");
 	socket->Send(msg);
+	Logger().Info("[PACKET_SEND] >>> SendQuestBadgeShop: SENT");
 }
 
 void CPacketManager::SendVoxelUnk38(IExtendedSocket* socket)
@@ -7371,6 +7379,8 @@ void CPacketManager::SendVoxelUnk46(IExtendedSocket* socket)
 
 void CPacketManager::SendVoxelUnk47(IExtendedSocket* socket)
 {
+	Logger().Info("[PACKET_SEND] >>> SendVoxelUnk47: Creating Voxel packet subtype 47");
+	
 	CSendPacket* msg = CreatePacket(socket, PacketId::Voxel);
 	msg->BuildHeader();
 
@@ -7378,7 +7388,9 @@ void CPacketManager::SendVoxelUnk47(IExtendedSocket* socket)
 
 	msg->WriteString("");
 
+	Logger().Info("[PACKET_SEND] >>> SendVoxelUnk47: Sending packet");
 	socket->Send(msg);
+	Logger().Info("[PACKET_SEND] >>> SendVoxelUnk47: SENT");
 }
 
 void CPacketManager::SendVoxelUnk58(IExtendedSocket* socket)

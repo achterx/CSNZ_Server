@@ -166,6 +166,8 @@ bool CChannelManager::OnRoomListPacket(CReceivePacket* msg, IExtendedSocket* soc
 
 void CChannelManager::JoinChannel(IUser* user, int channelServerID, int channelID, bool transfer)
 {
+	Logger().Info("[CHANNEL_JOIN] >>> JoinChannel called for user %s, serverID=%d, channelID=%d", user->GetLogName(), channelServerID, channelID);
+	
 	CChannelServer* channelServer = GetServerByIndex(channelServerID);
 	CChannel* channel = NULL;
 
@@ -176,6 +178,7 @@ void CChannelManager::JoinChannel(IUser* user, int channelServerID, int channelI
 
 	if (channelServer == NULL || channel == NULL)
 	{
+		Logger().Warn("[CHANNEL_JOIN] >>> JoinChannel FAILED: channelServer or channel is NULL");
 		return;
 	}
 
@@ -193,7 +196,9 @@ void CChannelManager::JoinChannel(IUser* user, int channelServerID, int channelI
 		user->SetCurrentChannel(channel);
 		user->SetLastChannelServer(channelServer);
 
+		Logger().Info("[CHANNEL_JOIN] >>> Calling channel->UserJoin()...");
 		channel->UserJoin(user);
+		Logger().Info("[CHANNEL_JOIN] >>> channel->UserJoin() complete");
 	}
 	else
 	{
@@ -204,7 +209,9 @@ void CChannelManager::JoinChannel(IUser* user, int channelServerID, int channelI
 
 	Logger().Info("User '%s' requested room list successfully, sending...\n", user->GetLogName());
 
+	Logger().Info("[CHANNEL_JOIN] >>> Sending room list...");
 	g_PacketManager.SendRoomListFull(user->GetExtendedSocket(), channel->GetRooms());
+	Logger().Info("[CHANNEL_JOIN] >>> Room list sent, JoinChannel COMPLETE");
 }
 
 void CChannelManager::EndAllGames()

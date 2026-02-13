@@ -34,6 +34,8 @@ void CChannel::Shutdown()
 
 bool CChannel::UserJoin(IUser* user, bool unhide)
 {
+	Logger().Info("[CHANNEL_USERJOIN] >>> UserJoin called for user %s, unhide=%d", user->GetLogName(), unhide);
+	
 	if (unhide)
 	{
 		for (auto u : m_Users)
@@ -44,18 +46,22 @@ bool CChannel::UserJoin(IUser* user, bool unhide)
 			g_PacketManager.SendLobbyUserJoin(u->GetExtendedSocket(), user);
 		}
 
+		Logger().Info("[CHANNEL_USERJOIN] >>> UserJoin (unhide) complete");
 		return true;
 	}
 
 	if ((int)m_Users.size() >= m_nMaxPlayers)
 	{
+		Logger().Warn("[CHANNEL_USERJOIN] >>> Lobby full, cannot join");
 		g_PacketManager.SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), OBFUSCATE("SERVER_SELECT_FAIL_LOBBY_FULL"));
 
 		return false;
 	}
 
+	Logger().Info("[CHANNEL_USERJOIN] >>> Adding user to channel list...");
 	m_Users.push_back(user);
 
+	Logger().Info("[CHANNEL_USERJOIN] >>> Sending lobby join updates to other users...");
 	for (auto u : m_Users) // send lobby update packet for all users in channel
 	{
 		if (u == user)
@@ -64,14 +70,19 @@ bool CChannel::UserJoin(IUser* user, bool unhide)
 		g_PacketManager.SendLobbyUserJoin(u->GetExtendedSocket(), user);
 	}
 
+	Logger().Info("[CHANNEL_USERJOIN] >>> Sending LobbyJoin packet to joining user...");
 	g_PacketManager.SendLobbyJoin(user->GetExtendedSocket(), this);
+	
+	Logger().Info("[CHANNEL_USERJOIN] >>> Sending RoomListFull packet...");
 	g_PacketManager.SendRoomListFull(user->GetExtendedSocket(), m_Rooms);
 
 	if (!m_LoginMsg.empty())
 	{
+		Logger().Info("[CHANNEL_USERJOIN] >>> Sending login message...");
 		g_PacketManager.SendUMsgNoticeMsgBoxToUuid(user->GetExtendedSocket(), m_LoginMsg);
 	}
 
+	Logger().Info("[CHANNEL_USERJOIN] >>> UserJoin complete, returning true");
 	return true;
 }
 

@@ -576,74 +576,118 @@ void CUserManager::SendLoginPacket(IUser* user, const CUserCharacter& character)
 {
 	IExtendedSocket* socket = user->GetExtendedSocket();
 
+	Logger().Info("[LOGIN_FLOW] ===== SendLoginPacket START for user %s =====", user->GetLogName());
+	
+	Logger().Info("[LOGIN_FLOW] Sending UserStart packet...");
 	g_PacketManager.SendUserStart(socket, user->GetID(), user->GetUsername(), character.gameName, true);
+	
+	Logger().Info("[LOGIN_FLOW] Sending UserUpdateInfo packet...");
 	g_PacketManager.SendUserUpdateInfo(socket, user, character);
 
 	CUserCharacterExtended characterExtended = user->GetCharacterExtended(EXT_UFLAG_CONFIG | EXT_UFLAG_BANSETTINGS);
 	if (characterExtended.config.size())
+	{
+		Logger().Info("[LOGIN_FLOW] Sending Option (config) packet...");
 		g_PacketManager.SendOption(socket, characterExtended.config);
+	}
 
 	vector<string> banList;
 	g_UserDatabase.GetBanList(user->GetID(), banList);
 	if (!banList.empty())
+	{
+		Logger().Info("[LOGIN_FLOW] Sending BanList packet...");
 		g_PacketManager.SendBanList(socket, banList);
+	}
 
+	Logger().Info("[LOGIN_FLOW] Sending BanSettings packet...");
 	g_PacketManager.SendBanSettings(socket, characterExtended.banSettings);
 
+	Logger().Info("[LOGIN_FLOW] Sending Metadata packets...");
 	SendMetadata(socket);
 
+	Logger().Info("[LOGIN_FLOW] Sending GameMatch packets...");
 	g_PacketManager.SendGameMatchInfo(socket);
 	g_PacketManager.SendGameMatchUnk(socket);
 	g_PacketManager.SendGameMatchUnk9(socket);
 
 	if (g_pServerConfig->mainMenuSkinEvent > 0)
+	{
+		Logger().Info("[LOGIN_FLOW] Sending EventMainMenuSkin packet...");
 		g_PacketManager.SendEventMainMenuSkin(socket, g_pServerConfig->mainMenuSkinEvent);
+	}
 
+	Logger().Info("[LOGIN_FLOW] Sending EventUnk packet...");
 	g_PacketManager.SendEventUnk(socket);
 
+	Logger().Info("[LOGIN_FLOW] Sending EventAdd packet...");
 	g_PacketManager.SendEventAdd(socket, g_pServerConfig->activeMiniGamesFlag);
 
 	if (g_pServerConfig->activeMiniGamesFlag & kEventFlag_WeaponRelease)
+	{
+		Logger().Info("[LOGIN_FLOW] Sending WeaponReleaseUpdate...");
 		g_MiniGameManager.SendWeaponReleaseUpdate(user);
+	}
 
+	Logger().Info("[LOGIN_FLOW] Sending UserInventory...");
 	SendUserInventory(user);
+	
+	Logger().Info("[LOGIN_FLOW] Sending UserLoadout...");
 	SendUserLoadout(user);
+	
+	Logger().Info("[LOGIN_FLOW] Sending UserNotices...");
 	SendUserNotices(user);
 
+	Logger().Info("[LOGIN_FLOW] Sending Shop packets...");
 	g_PacketManager.SendShopUpdate(socket, g_ShopManager.GetProducts());
 	g_PacketManager.SendShopRecommendedProducts(socket, g_ShopManager.GetRecommendedProducts());
 	g_PacketManager.SendShopPopularProducts(socket, g_ShopManager.GetPopularProducts());
 
 	// CN: 欢迎来到CSN:S服务器! 我们的服务器是非商业性的, 不要相信任何人说的售卖CSOL私服的信息.\n官方Discord: https://discord.gg/EvUAY6D \n
 	const char* text = OBFUSCATE("EN: Welcome to the CSN:S server! The project is non-commercial. Don't trust people trying to sell you a server.\nServer developer Discord: https://discord.gg/EvUAY6D \n");
+	Logger().Info("[LOGIN_FLOW] Sending welcome message box...");
 	g_PacketManager.SendUMsgNoticeMsgBoxToUuid(socket, text);
 
 	if (!g_pServerConfig->welcomeMessage.empty())
+	{
+		Logger().Info("[LOGIN_FLOW] Sending custom welcome message...");
 		g_PacketManager.SendUMsgNoticeMsgBoxToUuid(socket, g_pServerConfig->welcomeMessage);
+	}
 
+	Logger().Info("[LOGIN_FLOW] Joining channel...");
 	g_ChannelManager.JoinChannel(user, g_ChannelManager.channelServers[0]->GetID(), g_ChannelManager.channelServers[0]->GetChannels()[0]->GetID(), false);
 
 	for (auto& survey : g_pServerConfig->surveys)
 	{
 		if (!g_UserDatabase.IsSurveyAnswered(user->GetID(), survey.id))
+		{
+			Logger().Info("[LOGIN_FLOW] Sending user survey...");
 			g_PacketManager.SendUserSurvey(socket, survey);
+		}
 	}
 
+	Logger().Info("[LOGIN_FLOW] Sending LeaguePacket...");
 	g_PacketManager.SendLeaguePacket(socket);
 
 	// FROM ~X.03.24: without this packet, client doesn't show inventory and user info on top left, weird
+	Logger().Info("[LOGIN_FLOW] Sending UpdateInfo packet...");
 	g_PacketManager.SendUpdateInfo(socket);
 
+	Logger().Info("[LOGIN_FLOW] Sending VoxelURLs packet...");
 	g_PacketManager.SendVoxelURLs(socket, g_pServerConfig->voxelVxlURL, g_pServerConfig->voxelVmgURL);
 
 	// 2025 client: send available map/content list for lobby UI
+	Logger().Info("[LOGIN_FLOW] Sending ContentList packet...");
 	g_PacketManager.SendContentList(socket);
 
 	// 2025 client: send quest badge shop (empty) - client crashes after 1s without this
+	Logger().Info("[LOGIN_FLOW] Sending QuestBadgeShop packet...");
 	g_PacketManager.SendQuestBadgeShop(socket);
 
 	// 2025 client: voxel unk47 must follow QuestBadgeShop
+	Logger().Info("[LOGIN_FLOW] Sending VoxelUnk47 packet...");
 	g_PacketManager.SendVoxelUnk47(socket);
+	
+	Logger().Info("[LOGIN_FLOW] ===== SendLoginPacket COMPLETE for user %s =====", user->GetLogName());
 }
 
 void CUserManager::SendMetadata(IExtendedSocket* socket)
