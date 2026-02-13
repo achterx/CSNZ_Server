@@ -690,6 +690,10 @@ void CPacketManager::SendInventoryAdd(IExtendedSocket* socket, const vector<CUse
 					buf.writeUInt8(i++);
 					buf.writeUInt16_LE(0);
 				}
+
+				// 2025 client requires 8 extra bytes at end of each item
+				buf.writeUInt32_LE(0);
+				buf.writeUInt32_LE(0);
 			}
 
 			if ((buf.getBuffer().size() + msg->GetData().getBuffer().size()) > PACKET_MAX_SIZE)
@@ -3309,6 +3313,10 @@ void CPacketManager::SendDefaultItems(IExtendedSocket* socket, const vector<CUse
 				msg->WriteUInt8(i++);
 				msg->WriteUInt16(0);
 			}
+
+			// 2025 client requires 8 extra bytes at end of each item
+			msg->WriteUInt32(0);
+			msg->WriteUInt32(0);
 		}
 	}
 	socket->Send(msg);
