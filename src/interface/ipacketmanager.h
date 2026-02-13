@@ -254,6 +254,7 @@ public:
 	virtual void SendVoxelUnk10(IExtendedSocket* socket) = 0;
 	virtual void SendVoxelURLs(IExtendedSocket* socket, const std::string& voxelVxlURL, const std::string& voxelVmgURL) = 0;
 	virtual void SendContentList(IExtendedSocket* socket) = 0;
+	virtual void SendQuestBadgeShop(IExtendedSocket* socket) = 0;
 	virtual void SendVoxelUnk38(IExtendedSocket* socket) = 0;
 	virtual void SendVoxelUnk46(IExtendedSocket* socket) = 0;
 	virtual void SendVoxelUnk47(IExtendedSocket* socket) = 0;

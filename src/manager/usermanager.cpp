@@ -638,6 +638,12 @@ void CUserManager::SendLoginPacket(IUser* user, const CUserCharacter& character)
 
 	// 2025 client: send available map/content list for lobby UI
 	g_PacketManager.SendContentList(socket);
+
+	// 2025 client: send quest badge shop (empty) - client crashes after 1s without this
+	g_PacketManager.SendQuestBadgeShop(socket);
+
+	// 2025 client: voxel unk47 must follow QuestBadgeShop
+	g_PacketManager.SendVoxelUnk47(socket);
 }
 
 void CUserManager::SendMetadata(IExtendedSocket* socket)

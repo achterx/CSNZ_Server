@@ -7320,6 +7320,22 @@ void CPacketManager::SendContentList(IExtendedSocket* socket)
 	socket->Send(msg);
 }
 
+// 2025 client: sends empty QuestBadgeShop list (ID=116).
+// Must be sent after ContentList or lobby will crash after 1 second.
+// Format: sub(u8) + unk(u8) + count_u32(u32) + items[count * 16 bytes]
+// Each item: itemUID(u64) + unk(u32) + unk(u16) + unk(u16)
+void CPacketManager::SendQuestBadgeShop(IExtendedSocket* socket)
+{
+	CSendPacket* msg = CreatePacket(socket, PacketId::QuestBadgeShop);
+	msg->BuildHeader();
+
+	msg->WriteUInt8(116); // subtype (same as packet ID)
+	msg->WriteUInt8(2);   // unk
+	msg->WriteUInt32(0);  // count = 0 (empty list)
+
+	socket->Send(msg);
+}
+
 void CPacketManager::SendVoxelUnk38(IExtendedSocket* socket)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::Voxel);
