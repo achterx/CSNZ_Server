@@ -576,15 +576,21 @@ void CUserManager::SendLoginPacket(IUser* user, const CUserCharacter& character)
 {
 	IExtendedSocket* socket = user->GetExtendedSocket();
 
-	Logger().Info("=== TEST 2: UserStart + Metadata ===");
+	Logger().Info("=== TEST 3: UserStart + Metadata + Inventory ===");
 	
 	g_PacketManager.SendUserStart(socket, user->GetID(), user->GetUsername(), character.gameName, true);
 	
-	// Add Metadata
-	Logger().Info("[TEST2] Sending Metadata packets...");
+	Logger().Info("[TEST3] Sending Metadata packets...");
 	SendMetadata(socket);
 	
-	Logger().Info("=== TEST 2 COMPLETE - Does it crash? ===");
+	// Add Inventory
+	Logger().Info("[TEST3] Sending UserInventory...");
+	SendUserInventory(user);
+	
+	Logger().Info("[TEST3] Sending UserLoadout...");
+	SendUserLoadout(user);
+	
+	Logger().Info("=== TEST 3 COMPLETE - Does it crash? ===");
 }
 
 void CUserManager::SendMetadata(IExtendedSocket* socket)
