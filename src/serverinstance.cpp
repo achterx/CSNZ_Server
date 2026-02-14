@@ -447,13 +447,16 @@ void CServerInstance::OnPackets(IExtendedSocket* s, CReceivePacket* msg)
 	case PacketId::Kick:
 		g_UserManager.OnKickPacket(msg, s);
 		break;
-	case PacketId::Voxel:
-		g_VoxelManager.OnPacket(msg, s);
-		break;
-	default:
-		Logger().Warn("Unimplemented packet: %d\n", msg->GetID());
-		break;
-	}
+case PacketId::Voxel:
+    g_VoxelManager.OnPacket(msg, s);
+    break;
+case PacketId::Steam:
+    // 2025 client sends Steam packet during login - just acknowledge it
+    // No response needed, client doesn't wait for reply
+    break;
+default:
+    Logger().Warn("Unimplemented packet: %d\n", msg->GetID());
+    break;
 
 	delete msg;
 }

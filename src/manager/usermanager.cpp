@@ -678,8 +678,7 @@ void CUserManager::SendLoginPacket(IUser* user, const CUserCharacter& character)
 	g_PacketManager.SendUpdateInfo(socket);
 
 	Logger().Info("[LOGIN_FLOW] Sending VoxelURLs packet...");
-	g_PacketManager.SendVoxelURLs(socket, g_pServerConfig->voxelVxlURL, g_pServerConfig->voxelVmgURL);
-
+g_PacketManager.SendVoxelURLs(socket, "", "");
 	// 2025 client: send available map/content list for lobby UI
 	Logger().Info("[LOGIN_FLOW] Sending ContentList packet...");
 	g_PacketManager.SendContentList(socket);
