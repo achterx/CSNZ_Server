@@ -576,23 +576,20 @@ void CUserManager::SendLoginPacket(IUser* user, const CUserCharacter& character)
 {
 	IExtendedSocket* socket = user->GetExtendedSocket();
 
-	Logger().Info("=== TEST 3b: With Default Items ONLY (no user inventory) ===");
+	Logger().Info("=== TEST 3c: NO ITEMS AT ALL (skip inventory completely) ===");
 	
 	g_PacketManager.SendUserStart(socket, user->GetID(), user->GetUsername(), character.gameName, true);
 	
-	Logger().Info("[TEST3b] Sending Metadata packets...");
+	Logger().Info("[TEST3c] Sending Metadata packets...");
 	SendMetadata(socket);
 	
-	// Send ONLY default items, skip user inventory
-	Logger().Info("[TEST3b] Sending Default Items ONLY...");
-	g_PacketManager.SendDefaultItems(socket, m_DefaultItems);
+	// SKIP ALL INVENTORY - No default items, no user items, NOTHING
+	Logger().Info("[TEST3c] SKIPPING all inventory packets...");
 	
-	// Skip this: g_PacketManager.SendInventoryAdd(socket, items);
-	
-	Logger().Info("[TEST3b] Sending UserLoadout...");
+	Logger().Info("[TEST3c] Sending UserLoadout...");
 	SendUserLoadout(user);
 	
-	Logger().Info("=== TEST 3b COMPLETE - Does it crash? ===");
+	Logger().Info("=== TEST 3c COMPLETE - Does it crash? ===");
 }
 
 void CUserManager::SendMetadata(IExtendedSocket* socket)
