@@ -576,21 +576,23 @@ void CUserManager::SendLoginPacket(IUser* user, const CUserCharacter& character)
 {
 	IExtendedSocket* socket = user->GetExtendedSocket();
 
-	Logger().Info("=== TEST 3: UserStart + Metadata + Inventory ===");
+	Logger().Info("=== TEST 3b: With Default Items ONLY (no user inventory) ===");
 	
 	g_PacketManager.SendUserStart(socket, user->GetID(), user->GetUsername(), character.gameName, true);
 	
-	Logger().Info("[TEST3] Sending Metadata packets...");
+	Logger().Info("[TEST3b] Sending Metadata packets...");
 	SendMetadata(socket);
 	
-	// Add Inventory
-	Logger().Info("[TEST3] Sending UserInventory...");
-	SendUserInventory(user);
+	// Send ONLY default items, skip user inventory
+	Logger().Info("[TEST3b] Sending Default Items ONLY...");
+	g_PacketManager.SendDefaultItems(socket, m_DefaultItems);
 	
-	Logger().Info("[TEST3] Sending UserLoadout...");
+	// Skip this: g_PacketManager.SendInventoryAdd(socket, items);
+	
+	Logger().Info("[TEST3b] Sending UserLoadout...");
 	SendUserLoadout(user);
 	
-	Logger().Info("=== TEST 3 COMPLETE - Does it crash? ===");
+	Logger().Info("=== TEST 3b COMPLETE - Does it crash? ===");
 }
 
 void CUserManager::SendMetadata(IExtendedSocket* socket)
