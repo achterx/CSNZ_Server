@@ -658,6 +658,20 @@ void CUserManager::SendLoginPacket(IUser* user, const CUserCharacter& character)
 		g_PacketManager.SendUMsgNoticeMsgBoxToUuid(socket, g_pServerConfig->welcomeMessage);
 	}
 
+	// 2025 client: ContentList, QuestBadgeShop, and VoxelUnk47 MUST be sent BEFORE channel join
+	// Otherwise client freezes waiting for this data after receiving channel/lobby packets
+	Logger().Info("[LOGIN_FLOW] Sending VoxelURLs packet...");
+	g_PacketManager.SendVoxelURLs(socket, g_pServerConfig->voxelVxlURL, g_pServerConfig->voxelVmgURL);
+
+	Logger().Info("[LOGIN_FLOW] Sending ContentList packet...");
+	g_PacketManager.SendContentList(socket);
+
+	Logger().Info("[LOGIN_FLOW] Sending QuestBadgeShop packet...");
+	g_PacketManager.SendQuestBadgeShop(socket);
+
+	Logger().Info("[LOGIN_FLOW] Sending VoxelUnk47 packet...");
+	g_PacketManager.SendVoxelUnk47(socket);
+
 	Logger().Info("[LOGIN_FLOW] Joining channel...");
 	g_ChannelManager.JoinChannel(user, g_ChannelManager.channelServers[0]->GetID(), g_ChannelManager.channelServers[0]->GetChannels()[0]->GetID(), false);
 
@@ -676,20 +690,6 @@ void CUserManager::SendLoginPacket(IUser* user, const CUserCharacter& character)
 	// FROM ~X.03.24: without this packet, client doesn't show inventory and user info on top left, weird
 	Logger().Info("[LOGIN_FLOW] Sending UpdateInfo packet...");
 	g_PacketManager.SendUpdateInfo(socket);
-
-	Logger().Info("[LOGIN_FLOW] Sending VoxelURLs packet...");
-g_PacketManager.SendVoxelURLs(socket, "", "");
-	// 2025 client: send available map/content list for lobby UI
-	Logger().Info("[LOGIN_FLOW] Sending ContentList packet...");
-	g_PacketManager.SendContentList(socket);
-
-	// 2025 client: send quest badge shop (empty) - client crashes after 1s without this
-	Logger().Info("[LOGIN_FLOW] Sending QuestBadgeShop packet...");
-	g_PacketManager.SendQuestBadgeShop(socket);
-
-	// 2025 client: voxel unk47 must follow QuestBadgeShop
-	Logger().Info("[LOGIN_FLOW] Sending VoxelUnk47 packet...");
-	g_PacketManager.SendVoxelUnk47(socket);
 	
 	Logger().Info("[LOGIN_FLOW] ===== SendLoginPacket COMPLETE for user %s =====", user->GetLogName());
 }
