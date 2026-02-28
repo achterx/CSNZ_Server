@@ -236,9 +236,9 @@ void CRoom::SetStatus(RoomStatus newStatus)
 	m_pSettings->statusSymbol = newStatus == RoomStatus::STATUS_INGAME ? 3 : 0;
 }
 
-void CRoom::SendJoinNewRoom(IUser* user, bool joining)
+void CRoom::SendJoinNewRoom(IUser* user)
 {
-	g_PacketManager.SendRoomCreateAndJoin(user->GetExtendedSocket(), this, joining);
+	g_PacketManager.SendRoomCreateAndJoin(user->GetExtendedSocket(), this);
 }
 
 void CRoom::UpdateSettings(CRoomSettings& newSettings)
@@ -856,7 +856,7 @@ void CRoom::SendConnectHost(IUser* user, IUser* host)
 	if (g_pServerConfig->room.connectingMethod)
 	{
 		if (m_pServer)
-			g_PacketManager.SendHostServerJoin(user->GetExtendedSocket(), m_pServer->GetSocket()->GetIP(), 0, user->GetID());
+			g_PacketManager.SendHostServerJoin(user->GetExtendedSocket(), m_pServer->GetIP(), m_pServer->GetPort(), user->GetID());
 		else
 			g_PacketManager.SendHostJoin(user->GetExtendedSocket(), host);
 	}
@@ -876,7 +876,7 @@ void CRoom::SendStartMatch(IUser* host)
 		if (m_pServer)
 		{
 			g_PacketManager.SendRoomCreateAndJoin(m_pServer->GetSocket(), this);
-			g_PacketManager.SendHostGameStart(m_pServer->GetSocket(), host->GetID());
+			g_PacketManager.SendHostGameStart(m_pServer->GetSocket(), m_pServer->GetPort());
 		}
 		else
 		{

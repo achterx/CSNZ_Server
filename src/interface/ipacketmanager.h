@@ -129,8 +129,8 @@ public:
 	
 	virtual void SendSearchRoomNotice(IExtendedSocket* socket, IRoom* room, const std::string& invitersGameName, const std::string& inviteMsg) = 0;
 
-	virtual void SendRoomCreateAndJoin(IExtendedSocket* socket, IRoom* roomInfo, bool joining = false) = 0;
-	virtual void SendRoomPlayerJoin(IExtendedSocket* socket, IUser* user, RoomTeamNum num) = 0;
+virtual void SendRoomCreateAndJoin(IExtendedSocket* socket, IRoom* roomInfo) = 0;
+virtual void SendRoomPlayerJoin(IExtendedSocket* socket, IUser* user, RoomTeamNum num) = 0;
 	virtual void SendRoomUpdateSettings(IExtendedSocket* socket, CRoomSettings* newSettings, int low = 0, int lowMid = 0, int highMid = 0, int high = 0) = 0;
 	virtual void SendRoomSetUserTeam(IExtendedSocket* socket, IUser* user, int teamNum) = 0;
 	virtual void SendRoomSetPlayerReady(IExtendedSocket* socket, IUser* user, RoomReadyStatus readyStatus) = 0;
@@ -149,8 +149,8 @@ public:
 	virtual void SendVoxelRoomList(IExtendedSocket* socket, const std::vector<IRoom*>& rooms) = 0;
 	
 	virtual void SendHostOnItemUse(IExtendedSocket* socket, int userId, int itemId) = 0;
-	virtual void SendHostServerJoin(IExtendedSocket* socket, const std::string& ipString, int port, int userId) = 0;
-	virtual void SendHostStop(IExtendedSocket* socket) = 0;
+virtual void SendHostServerJoin(IExtendedSocket* socket, int ipAddress, int port, int userId) = 0;
+virtual void SendHostStop(IExtendedSocket* socket) = 0;
 	virtual void SendHostLeaveResultWindow(IExtendedSocket* socket) = 0;
 	virtual void SendHostUserInventory(IExtendedSocket* socket, int userId, const std::vector<CUserInventoryItem>& items) = 0;
 	virtual void SendHostGameStart(IExtendedSocket* socket, int userId) = 0;

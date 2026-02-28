@@ -1,9 +1,6 @@
 #include "packetmanager.h"
 #include "serverinstance.h"
 #include "channelmanager.h"
-#include "../serverconfig.h"
-
-#include <algorithm>
 
 #include "packet/packethelper_fulluserinfo.h"
 #include "packet/packet_metadata_data.h"
@@ -38,6 +35,10 @@ CPacketManager::CPacketManager() : CBaseManager("PacketManager")
 	m_pZBCompetitiveZip = NULL;
 	m_pPPSystemZip = NULL;
 	m_pItemZip = NULL;
+
+	m_pItemZipPart1 = NULL;
+	m_pItemZipPart2 = NULL;
+
 	m_pCodisDataZip = NULL;
 	m_pWeaponPropZip = NULL;
 	m_pModeEventZip = NULL;
@@ -53,6 +54,13 @@ CPacketManager::CPacketManager() : CBaseManager("PacketManager")
 	m_pUnk49 = NULL;
 	m_pUnk54 = NULL;
 	m_pUnk55 = NULL;
+
+	m_pUnk4 = NULL;
+	m_pUnk56 = NULL;
+	m_pUnk57 = NULL;
+	m_pUnk58 = NULL;
+	m_pUnk63 = NULL;
+	m_pUnk255 = NULL;
 }
 
 CPacketManager::~CPacketManager()
@@ -78,6 +86,10 @@ bool CPacketManager::Init()
 	m_pZBCompetitiveZip = LoadBinaryMetadata("ZBCompetitive.json", true);
 	m_pPPSystemZip = LoadBinaryMetadata("ppsystem.json", true);
 	m_pItemZip = LoadBinaryMetadata("Item.csv", true);
+
+	m_pItemZipPart1 = LoadBinaryMetadata("Metadata_Item.csv.zip.part1");
+	m_pItemZipPart2 = LoadBinaryMetadata("Metadata_Item.csv.zip.part2");
+
 	m_pCodisDataZip = LoadBinaryMetadata("CodisData.csv", true);
 	m_pWeaponPropZip = LoadBinaryMetadata("WeaponProp.json", true);
 	m_pModeEventZip = LoadBinaryMetadata("ModeEvent.csv", true);
@@ -94,15 +106,28 @@ bool CPacketManager::Init()
 	m_pUnk54 = LoadBinaryMetadata("Metadata_Unk54.bin");
 	m_pUnk55 = LoadBinaryMetadata("Metadata_Unk55.bin");
 
+	m_pUnk4 = LoadBinaryMetadata("Metadata_Unk4.bin");
+	m_pUnk56 = LoadBinaryMetadata("Metadata_Unk56.bin");
+	m_pUnk57 = LoadBinaryMetadata("Metadata_Unk57.bin");
+	m_pUnk58 = LoadBinaryMetadata("Metadata_Unk58.bin");
+	m_pUnk63 = LoadBinaryMetadata("Metadata_Unk63.bin");
+	m_pUnk255 = LoadBinaryMetadata("Metadata_Unk255.bin");
+
 	if (!m_pMapListZip || !m_pClientTableZip || !m_pWeaponPartsZip || !m_pMileageShopZip || !m_pMatchingZip || !m_pProgressUnlockZip || !m_pGameModeListZip ||
 		!m_pReinforceMaxLvlZip || !m_pReinforceMaxExpZip || !m_pItemExpireTimeZip || !m_pHonorMoneyShopZip || !m_pScenarioTX_CommonZip || !m_pScenarioTX_DediZip ||
 		!m_pShopItemList_DediZip || !m_pZBCompetitiveZip || !m_pPPSystemZip || !m_pItemZip || !m_pCodisDataZip || !m_pWeaponPropZip || !m_pReinforceItemsExp ||
 		!m_pUnk3 || !m_pUnk8 || !m_pUnk20 || !m_pUnk31 || !m_pUnk43 || !m_pUnk49 || !m_pModeEventZip || !m_pEventShopZip || !m_pFamilyTotalWarMapZip ||
-		!m_pFamilyTotalWarZip || !m_pUnk54 || !m_pUnk55)
+		!m_pFamilyTotalWarZip || !m_pUnk54 || !m_pUnk55 || !m_pUnk4 || !m_pUnk56 || !m_pUnk57 || !m_pUnk58 || !m_pUnk63 || !m_pUnk255)
 	{
 		Logger().Fatal("Failed to load metadata\n");
 		return false;
 	}
+
+	//if (!m_pItemZipPart1 || !m_pItemZipPart2)
+	//{
+	//	Logger().Fatal("Failed to load metadata\n");
+	//	return false;
+	//}
 
 	return true;
 }
@@ -145,6 +170,13 @@ void CPacketManager::Shutdown()
 		delete m_pPPSystemZip;
 	if (m_pItemZip)
 		delete m_pItemZip;
+
+	if (m_pItemZipPart1)
+		delete m_pItemZipPart1;
+
+	if (m_pItemZipPart2)
+		delete m_pItemZipPart2;
+
 	if (m_pCodisDataZip)
 		delete m_pCodisDataZip;
 	if (m_pWeaponPropZip)
@@ -176,6 +208,18 @@ void CPacketManager::Shutdown()
 		delete m_pUnk54;
 	if (m_pUnk55)
 		delete m_pUnk55;
+	if (m_pUnk4)
+		delete m_pUnk4;
+	if (m_pUnk56)
+		delete m_pUnk56;
+	if (m_pUnk57)
+		delete m_pUnk57;
+	if (m_pUnk58)
+		delete m_pUnk58;
+	if (m_pUnk63)
+		delete m_pUnk63;
+	if (m_pUnk255)
+		delete m_pUnk255;
 }
 
 CSendPacket* CPacketManager::CreatePacket(IExtendedSocket* socket, int msgID)
@@ -694,7 +738,6 @@ void CPacketManager::SendInventoryAdd(IExtendedSocket* socket, const vector<CUse
 					buf.writeUInt16_LE(0);
 				}
 
-				// new client (2025): two extra uint32s after unk array (v63, v64 in sub_25987F0)
 				buf.writeUInt32_LE(0);
 				buf.writeUInt32_LE(0);
 			}
@@ -817,7 +860,7 @@ void CPacketManager::SendMetadataMaplist(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_MapList);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pMapListZip->GetBufSize());
 	msg->WriteData(m_pMapListZip->GetBuf(), m_pMapListZip->GetBufSize());
 
@@ -833,7 +876,7 @@ void CPacketManager::SendMetadataClientTable(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_ClientTable);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pClientTableZip->GetBufSize());
 	msg->WriteData(m_pClientTableZip->GetBuf(), m_pClientTableZip->GetBufSize());
 
@@ -849,7 +892,7 @@ void CPacketManager::SendMetadataWeaponParts(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_WeaponParts);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pWeaponPartsZip->GetBufSize());
 	msg->WriteData(m_pWeaponPartsZip->GetBuf(), m_pWeaponPartsZip->GetBufSize());
 
@@ -863,6 +906,8 @@ void CPacketManager::SendMetadataModelist(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_ModeList);
+	msg->WriteUInt8(5);
+
 	msg->WriteUInt16(sizeof(metaData2)); // size
 
 	msg->WriteData(metaData2, sizeof(metaData2));
@@ -879,7 +924,7 @@ void CPacketManager::SendMetadataMatchOption(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_MatchOption);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pMatchingZip->GetBufSize());
 	msg->WriteData(m_pMatchingZip->GetBuf(), m_pMatchingZip->GetBufSize());
 
@@ -895,7 +940,7 @@ void CPacketManager::SendMetadataProgressUnlock(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_ProgressUnlock); // progress_unlock.csv
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pProgressUnlockZip->GetBufSize());
 	msg->WriteData(m_pProgressUnlockZip->GetBuf(), m_pProgressUnlockZip->GetBufSize());
 
@@ -1004,7 +1049,7 @@ void CPacketManager::SendMetadataGameModeList(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_GameModeList);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pGameModeListZip->GetBufSize());
 	msg->WriteData(m_pGameModeListZip->GetBuf(), m_pGameModeListZip->GetBufSize());
 
@@ -1020,7 +1065,7 @@ void CPacketManager::SendMetadataReinforceMaxLvl(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_ReinforceMaxLvl);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pReinforceMaxLvlZip->GetBufSize());
 	msg->WriteData(m_pReinforceMaxLvlZip->GetBuf(), m_pReinforceMaxLvlZip->GetBufSize());
 
@@ -1036,7 +1081,7 @@ void CPacketManager::SendMetadataReinforceMaxEXP(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_ReinforceMaxEXP);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pReinforceMaxExpZip->GetBufSize());
 	msg->WriteData(m_pReinforceMaxExpZip->GetBuf(), m_pReinforceMaxExpZip->GetBufSize());
 
@@ -1065,7 +1110,7 @@ void CPacketManager::SendMetadataItemExpireTime(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_ItemExpireTime);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pItemExpireTimeZip->GetBufSize());
 	msg->WriteData(m_pItemExpireTimeZip->GetBuf(), m_pItemExpireTimeZip->GetBufSize());
 
@@ -1156,7 +1201,7 @@ void CPacketManager::SendMetadataHonorMoneyShop(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_HonorMoneyShop);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pHonorMoneyShopZip->GetBufSize());
 	msg->WriteData(m_pHonorMoneyShopZip->GetBuf(), m_pHonorMoneyShopZip->GetBufSize());
 
@@ -1172,7 +1217,7 @@ void CPacketManager::SendMetadataScenarioTX_Common(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_ScenarioTX_Common);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pScenarioTX_CommonZip->GetBufSize());
 	msg->WriteData(m_pScenarioTX_CommonZip->GetBuf(), m_pScenarioTX_CommonZip->GetBufSize());
 
@@ -1188,7 +1233,7 @@ void CPacketManager::SendMetadataScenarioTX_Dedi(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_ScenarioTX_Dedi);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pScenarioTX_DediZip->GetBufSize());
 	msg->WriteData(m_pScenarioTX_DediZip->GetBuf(), m_pScenarioTX_DediZip->GetBufSize());
 
@@ -1204,7 +1249,7 @@ void CPacketManager::SendMetadataShopItemList_Dedi(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_ShopItemList_Dedi);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pShopItemList_DediZip->GetBufSize());
 	msg->WriteData(m_pShopItemList_DediZip->GetBuf(), m_pShopItemList_DediZip->GetBufSize());
 
@@ -1220,7 +1265,7 @@ void CPacketManager::SendMetadataZBCompetitive(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_ZBCompetitive);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pZBCompetitiveZip->GetBufSize());
 	msg->WriteData(m_pZBCompetitiveZip->GetBuf(), m_pZBCompetitiveZip->GetBufSize());
 
@@ -1262,7 +1307,7 @@ void CPacketManager::SendMetadataWeaponProp(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_WeaponProp);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pWeaponPropZip->GetBufSize());
 	msg->WriteData(m_pWeaponPropZip->GetBuf(), m_pWeaponPropZip->GetBufSize());
 
@@ -1278,7 +1323,7 @@ void CPacketManager::SendMetadataPPSystem(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_PPSystem);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pPPSystemZip->GetBufSize());
 	msg->WriteData(m_pPPSystemZip->GetBuf(), m_pPPSystemZip->GetBufSize());
 
@@ -1294,7 +1339,7 @@ void CPacketManager::SendMetadataCodisData(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_CodisData);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pCodisDataZip->GetBufSize());
 	msg->WriteData(m_pCodisDataZip->GetBuf(), m_pCodisDataZip->GetBufSize());
 
@@ -1303,18 +1348,54 @@ void CPacketManager::SendMetadataCodisData(IExtendedSocket* socket)
 
 void CPacketManager::SendMetadataItem(IExtendedSocket* socket)
 {
+	//if( !m_pItemZipPart1 || !m_pItemZipPart1)
+	//	return;
+
+	//CSendPacket* msg = CreatePacket(socket, PacketId::Metadata);
+	//msg->BuildHeader();
+	//msg->WriteUInt8(32);
+	//msg->WriteUInt8(1);
+	//msg->WriteUInt16(m_pItemZipPart1->GetBufSize());
+	//msg->WriteData(m_pItemZipPart1->GetBuf(), m_pItemZipPart1->GetBufSize());
+	//socket->Send(msg, true);
+
+	//CSendPacket* msg1 = CreatePacket(socket, PacketId::Metadata);
+	//msg1->BuildHeader();
+	//msg1->WriteUInt8(32);
+	//msg1->WriteUInt8(4);
+	//msg1->WriteUInt16(m_pItemZipPart2->GetBufSize());
+	//msg1->WriteData(m_pItemZipPart2->GetBuf(), m_pItemZipPart2->GetBufSize());
+	//socket->Send(msg1, true);
+
 	if (!m_pItemZip)
 		return;
 
-	CSendPacket* msg = CreatePacket(socket, PacketId::Metadata);
-	msg->BuildHeader();
+	size_t totalSize = m_pItemZip->GetBufSize();
+	unsigned char* data = (unsigned char*)m_pItemZip->GetBuf();
 
-	msg->WriteUInt8(kPacket_Metadata_Item);
+	const size_t chunkSize = 64000;
+	size_t offset = 0;
+	int part = 0;
 
-	msg->WriteUInt16(m_pItemZip->GetBufSize());
-	msg->WriteData(m_pItemZip->GetBuf(), m_pItemZip->GetBufSize());
+	while (offset < totalSize)
+	{
+		size_t thisChunkSize = (totalSize - offset) > chunkSize ? chunkSize : (totalSize - offset);
+		unsigned char flag = (offset == 0) ? 1 : 4;
 
-	socket->Send(msg);
+		CSendPacket* msg = CreatePacket(socket, PacketId::Metadata);
+		msg->BuildHeader();
+		msg->WriteUInt8(32);
+		msg->WriteUInt8(flag);
+		msg->WriteUInt16(thisChunkSize);
+		msg->WriteData(data + offset, thisChunkSize);
+
+		socket->Send(msg, true);
+
+		offset += thisChunkSize;
+		part++;
+	}
+
+	Logger().Info("Sent Metadata Item.csv in %d parts (total %zu bytes)\n", part, totalSize);
 }
 
 void CPacketManager::SendMetadataModeEvent(IExtendedSocket* socket)
@@ -1326,7 +1407,7 @@ void CPacketManager::SendMetadataModeEvent(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_ModeEvent);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pModeEventZip->GetBufSize());
 	msg->WriteData(m_pModeEventZip->GetBuf(), m_pModeEventZip->GetBufSize());
 
@@ -1342,7 +1423,7 @@ void CPacketManager::SendMetadataMileageShop(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_MileageShop);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pMileageShopZip->GetBufSize());
 	msg->WriteData(m_pMileageShopZip->GetBuf(), m_pMileageShopZip->GetBufSize());
 
@@ -1358,7 +1439,7 @@ void CPacketManager::SendMetadataEventShop(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_EventShop);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pEventShopZip->GetBufSize());
 	msg->WriteData(m_pEventShopZip->GetBuf(), m_pEventShopZip->GetBufSize());
 
@@ -1374,7 +1455,7 @@ void CPacketManager::SendMetadataFamilyTotalWarMap(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_FamilyTotalWarMap);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pFamilyTotalWarMapZip->GetBufSize());
 	msg->WriteData(m_pFamilyTotalWarMapZip->GetBuf(), m_pFamilyTotalWarMapZip->GetBufSize());
 
@@ -1390,7 +1471,7 @@ void CPacketManager::SendMetadataFamilyTotalWar(IExtendedSocket* socket)
 	msg->BuildHeader();
 
 	msg->WriteUInt8(kPacket_Metadata_FamilyTotalWar);
-
+	msg->WriteUInt8(5);
 	msg->WriteUInt16(m_pFamilyTotalWarZip->GetBufSize());
 	msg->WriteData(m_pFamilyTotalWarZip->GetBuf(), m_pFamilyTotalWarZip->GetBufSize());
 
@@ -1421,6 +1502,66 @@ void CPacketManager::SendMetadataUnk55(IExtendedSocket* socket)
 	msg->WriteData(m_pUnk55->GetBuf(), m_pUnk55->GetBufSize());
 
 	socket->Send(msg);
+
+	if (!m_pUnk255)
+		return;
+
+	CSendPacket* msg1 = CreatePacket(socket, PacketId::Metadata);
+	msg1->BuildHeader();
+
+	msg1->WriteData(m_pUnk255->GetBuf(), m_pUnk255->GetBufSize());
+
+	socket->Send(msg1);
+
+	if (!m_pUnk63)
+		return;
+
+	CSendPacket* msg2 = CreatePacket(socket, PacketId::Metadata);
+	msg2->BuildHeader();
+
+	msg2->WriteData(m_pUnk63->GetBuf(), m_pUnk63->GetBufSize());
+
+	socket->Send(msg2);
+
+	if (!m_pUnk58)
+		return;
+
+	CSendPacket* msg3 = CreatePacket(socket, PacketId::Metadata);
+	msg3->BuildHeader();
+
+	msg3->WriteData(m_pUnk58->GetBuf(), m_pUnk58->GetBufSize());
+
+	socket->Send(msg3);
+
+	if (!m_pUnk57)
+		return;
+
+	CSendPacket* msg4 = CreatePacket(socket, PacketId::Metadata);
+	msg4->BuildHeader();
+
+	msg4->WriteData(m_pUnk57->GetBuf(), m_pUnk57->GetBufSize());
+
+	socket->Send(msg4);
+
+	if (!m_pUnk56)
+		return;
+
+	CSendPacket* msg5 = CreatePacket(socket, PacketId::Metadata);
+	msg5->BuildHeader();
+
+	msg5->WriteData(m_pUnk56->GetBuf(), m_pUnk56->GetBufSize());
+
+	socket->Send(msg5);
+
+	if (!m_pUnk4)
+		return;
+
+	CSendPacket* msg6 = CreatePacket(socket, PacketId::Metadata);
+	msg6->BuildHeader();
+
+	msg6->WriteData(m_pUnk4->GetBuf(), m_pUnk4->GetBufSize());
+
+	socket->Send(msg6);
 }
 
 void CPacketManager::SendGameMatchInfo(IExtendedSocket* socket)
@@ -1805,7 +1946,7 @@ void BuildRoomInfo(CSendPacket* msg, IRoom* room, int lFlag, int hFlag)
 
 	// room info
 	msg->WriteUInt32(lFlag);
-	msg->WriteUInt32(hFlag);
+	msg->WriteUInt32(0);
 
 	CRoomSettings* roomSettings = room->GetSettings();
 
@@ -1966,6 +2107,23 @@ void BuildRoomInfo(CSendPacket* msg, IRoom* room, int lFlag, int hFlag)
 	}
 	if (hFlag & RLHFLAG_ZBREBALANCE) {
 		msg->WriteUInt8(roomSettings->zbRebalance);
+	}
+
+	if (hFlag & RLHFLAG_UNK17)
+	{
+		msg->WriteUInt8(0);
+	}
+	if (hFlag & RLHFLAG_UNK18)
+	{
+		msg->WriteUInt8(0);
+	}
+	if (hFlag & RLHFLAG_UNK19)
+	{
+		msg->WriteUInt8(0);
+	}
+	if (hFlag & RLHFLAG_UNK20)
+	{
+		msg->WriteUInt8(0);
 	}
 
 	// studio related
@@ -2318,12 +2476,13 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 	if (lowFlag & ROOM_LOW_UNK) {
 		msg->WriteUInt8(newSettings->unk00);
 	}
-	if (lowFlag & ROOM_LOW_CLANBATTLE) {
-		msg->WriteUInt8(newSettings->unk01);
-		msg->WriteUInt8(newSettings->unk02);
-		msg->WriteUInt8(newSettings->unk03);
-		msg->WriteUInt32(newSettings->unk04);
-	}
+	//	unused
+	//if (lowFlag & ROOM_LOW_CLANBATTLE) {
+	//	msg->WriteUInt8(newSettings->unk01);
+	//	msg->WriteUInt8(newSettings->unk02);
+	//	msg->WriteUInt8(newSettings->unk03);
+	//	msg->WriteUInt32(newSettings->unk04);
+	//}
 	if (lowFlag & ROOM_LOW_PASSWORD) {
 		msg->WriteString(newSettings->password);
 	}
@@ -2410,47 +2569,49 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 	if (lowFlag & ROOM_LOW_STATUS) {
 		msg->WriteUInt8(newSettings->status);
 	}
-	if (lowFlag & ROOM_LOW_UNK33) {
-		msg->WriteUInt8(newSettings->unk33);
-		if (newSettings->unk33_vec.size() == 2)
-		{
-			for (int i = 0; i < 2; i++)
-			{
-				msg->WriteUInt32(newSettings->unk33_vec[i].unk1);
-				msg->WriteUInt32(newSettings->unk33_vec[i].unk2);
-				msg->WriteUInt8(newSettings->unk33_vec[i].unk3);
-				msg->WriteUInt16(newSettings->unk33_vec[i].unk4);
-				msg->WriteUInt8(newSettings->unk33_vec[i].unk5);
-				msg->WriteUInt8(newSettings->unk33_vec[i].unk6);
-				msg->WriteUInt16(newSettings->unk33_vec[i].unk7);
-				msg->WriteUInt8(newSettings->unk33_vec[i].unk8);
-				msg->WriteUInt8(newSettings->unk33_vec[i].unk9);
-			}
-		}
-		else
-		{
-			for (int i = 0; i < 2; i++)
-			{
-				msg->WriteUInt32(0);
-				msg->WriteUInt32(0);
-				msg->WriteUInt8(0);
-				msg->WriteUInt16(0);
-				msg->WriteUInt8(0);
-				msg->WriteUInt8(0);
-				msg->WriteUInt16(0);
-				msg->WriteUInt8(0);
-				msg->WriteUInt8(0);
-			}
-		}
-	}
+	//	unused
+	//if (lowFlag & ROOM_LOW_UNK33) {
+	//	msg->WriteUInt8(newSettings->unk33);
+	//	if (newSettings->unk33_vec.size() == 2)
+	//	{
+	//		for (int i = 0; i < 2; i++)
+	//		{
+	//			msg->WriteUInt32(newSettings->unk33_vec[i].unk1);
+	//			msg->WriteUInt32(newSettings->unk33_vec[i].unk2);
+	//			msg->WriteUInt8(newSettings->unk33_vec[i].unk3);
+	//			msg->WriteUInt16(newSettings->unk33_vec[i].unk4);
+	//			msg->WriteUInt8(newSettings->unk33_vec[i].unk5);
+	//			msg->WriteUInt8(newSettings->unk33_vec[i].unk6);
+	//			msg->WriteUInt16(newSettings->unk33_vec[i].unk7);
+	//			msg->WriteUInt8(newSettings->unk33_vec[i].unk8);
+	//			msg->WriteUInt8(newSettings->unk33_vec[i].unk9);
+	//		}
+	//	}
+	//	else
+	//	{
+	//		for (int i = 0; i < 2; i++)
+	//		{
+	//			msg->WriteUInt32(0);
+	//			msg->WriteUInt32(0);
+	//			msg->WriteUInt8(0);
+	//			msg->WriteUInt16(0);
+	//			msg->WriteUInt8(0);
+	//			msg->WriteUInt8(0);
+	//			msg->WriteUInt16(0);
+	//			msg->WriteUInt8(0);
+	//			msg->WriteUInt8(0);
+	//		}
+	//	}
+	//}
 
-	if (lowMidFlag & ROOM_LOWMID_UNK34) {
-		msg->WriteUInt32(newSettings->unk34);
-		msg->WriteString(newSettings->unk35);
-		msg->WriteUInt8(newSettings->unk36);
-		msg->WriteUInt8(newSettings->unk37);
-		msg->WriteUInt8(newSettings->unk38);
-	}
+	//	unused
+	//if (lowMidFlag & ROOM_LOWMID_UNK34) {
+	//	msg->WriteUInt32(newSettings->unk34);
+	//	msg->WriteString(newSettings->unk35);
+	//	msg->WriteUInt8(newSettings->unk36);
+	//	msg->WriteUInt8(newSettings->unk37);
+	//	msg->WriteUInt8(newSettings->unk38);
+	//}
 	if (lowMidFlag & ROOM_LOWMID_C4TIMER) {
 		msg->WriteUInt8(newSettings->c4Timer);
 	}
@@ -2483,8 +2644,8 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 		msg->WriteUInt8(newSettings->mapPlaylistSize);
 		for (size_t i = 0; i < newSettings->mapPlaylistSize; i++)
 		{
-			msg->WriteUInt8(newSettings->mapPlaylist[i].unk1);
-			msg->WriteUInt16(newSettings->mapPlaylist[i].mapId);
+			msg->WriteUInt16(newSettings->mapPlaylist[i].unk1);
+			msg->WriteUInt8(newSettings->mapPlaylist[i].mapId);
 		}
 	}
 	if (lowMidFlag & ROOM_LOWMID_MAPPLAYLISTINDEX) {
@@ -2497,7 +2658,7 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 		msg->WriteUInt8(newSettings->sd);
 	}
 	if (lowMidFlag & ROOM_LOWMID_ZSDIFFICULTY) {
-		msg->WriteUInt8(newSettings->zsDifficulty);
+		msg->WriteUInt16(newSettings->zsDifficulty);
 		msg->WriteUInt32(newSettings->unk56);
 		msg->WriteUInt32(newSettings->unk57);
 	}
@@ -2527,97 +2688,84 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 			}
 		}
 	}
-	if (lowMidFlag & ROOM_LOWMID_VOXEL) {
-		msg->WriteUInt32(newSettings->voxelFlag);
-		if (newSettings->voxelFlag & VOXELFLAG_ID) {
-			msg->WriteString(newSettings->voxel_id);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_RESOURCEID) {
-			msg->WriteString(newSettings->voxel_resource_id);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_RESOURCEMAXPLAYER) {
-			msg->WriteUInt8(newSettings->voxel_resource_max_player);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_TITLE) {
-			msg->WriteString(newSettings->voxel_title);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_RESOURCEMODE) {
-			msg->WriteUInt8(newSettings->voxel_resource_mode);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_PERMISSION) {
-			msg->WriteUInt8(newSettings->voxel_permission);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_DESCRIPTION) {
-			msg->WriteString(newSettings->voxel_description);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_PARENTSSLOTID) {
-			msg->WriteString(newSettings->voxel_parents_slot_id);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_IMAGEID) {
-			msg->WriteString(newSettings->voxel_image_id);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_CREATORNICKNAME) {
-			msg->WriteString(newSettings->voxel_creator_nickname);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_CREATORUSERNAME) {
-			msg->WriteString(newSettings->voxel_creator_username);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_LIKECOUNT) {
-			msg->WriteUInt32(newSettings->voxel_like_count);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_PLAYCOUNT) {
-			msg->WriteUInt32(newSettings->voxel_play_count);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_BOOKMARKCOUNT) {
-			msg->WriteUInt32(newSettings->voxel_bookmark_count);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_UNK15) {
-			msg->WriteUInt32(newSettings->voxel_unk15_size);
-			for (int i = 0; i < newSettings->voxel_unk15_size; i++)
-			{
-				msg->WriteUInt32(newSettings->voxel_unk15_vec[i].unk1);
-				msg->WriteString(newSettings->voxel_unk15_vec[i].unk2);
-			}
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_CUBECOUNT) {
-			msg->WriteUInt32(newSettings->voxel_cube_count);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_UNK17) {
-			msg->WriteUInt32(newSettings->voxel_unk17);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_UNK18) {
-			msg->WriteUInt32(newSettings->voxel_unk18);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_SLOTCATEGORY) {
-			msg->WriteUInt8(newSettings->voxel_slot_category);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_SANDBOXSCRIPT) {
-			msg->WriteUInt8(newSettings->voxel_sandbox_script);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_SAVEGROUPID) {
-			msg->WriteString(newSettings->voxel_savegroup_id);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_UNK22) {
-			msg->WriteUInt8(newSettings->voxel_unk22);
-		}
-		if (newSettings->voxelFlag & VOXELFLAG_UNK23) {
-			msg->WriteUInt8(newSettings->voxel_unk23);
-		}
-	}
-	// bit19 (ROOM_LOWMID_UNK_NEW1): IDA LABEL_299 reads u8 count + loop of u16s.
-	// count=0 means client reads exactly 1 byte. Writing uint32 here caused 3-byte shift
-	// corrupting everything after bit19, including highMidFlag field data (familyBattle reads garbage -> looks like clanwar is ON).
-	if (lowMidFlag & ROOM_LOWMID_UNK_NEW1) {
-		msg->WriteUInt8(0); // count = 0, no u16 entries follow
-	}
-	// bit20 (ROOM_LOWMID_UNK_NEW2): IDA LABEL_304, reads u8
-	if (lowMidFlag & ROOM_LOWMID_UNK_NEW2) {
-		msg->WriteUInt8(0); // count = 0, no entries
-	}
-	// LABEL_304: uint8 bool
-	if (lowMidFlag & ROOM_LOWMID_UNK_NEW3) {
-		msg->WriteUInt8(0);
-	}
+	// unused
+	//if (lowMidFlag & ROOM_LOWMID_VOXEL) {
+	//	msg->WriteUInt32(newSettings->voxelFlag);
+	//	if (newSettings->voxelFlag & VOXELFLAG_ID) {
+	//		msg->WriteString(newSettings->voxel_id);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_RESOURCEID) {
+	//		msg->WriteString(newSettings->voxel_resource_id);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_RESOURCEMAXPLAYER) {
+	//		msg->WriteUInt8(newSettings->voxel_resource_max_player);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_TITLE) {
+	//		msg->WriteString(newSettings->voxel_title);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_RESOURCEMODE) {
+	//		msg->WriteUInt8(newSettings->voxel_resource_mode);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_PERMISSION) {
+	//		msg->WriteUInt8(newSettings->voxel_permission);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_DESCRIPTION) {
+	//		msg->WriteString(newSettings->voxel_description);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_PARENTSSLOTID) {
+	//		msg->WriteString(newSettings->voxel_parents_slot_id);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_IMAGEID) {
+	//		msg->WriteString(newSettings->voxel_image_id);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_CREATORNICKNAME) {
+	//		msg->WriteString(newSettings->voxel_creator_nickname);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_CREATORUSERNAME) {
+	//		msg->WriteString(newSettings->voxel_creator_username);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_LIKECOUNT) {
+	//		msg->WriteUInt32(newSettings->voxel_like_count);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_PLAYCOUNT) {
+	//		msg->WriteUInt32(newSettings->voxel_play_count);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_BOOKMARKCOUNT) {
+	//		msg->WriteUInt32(newSettings->voxel_bookmark_count);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_UNK15) {
+	//		msg->WriteUInt32(newSettings->voxel_unk15_size);
+	//		for (int i = 0; i < newSettings->voxel_unk15_size; i++)
+	//		{
+	//			msg->WriteUInt32(newSettings->voxel_unk15_vec[i].unk1);
+	//			msg->WriteString(newSettings->voxel_unk15_vec[i].unk2);
+	//		}
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_CUBECOUNT) {
+	//		msg->WriteUInt32(newSettings->voxel_cube_count);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_UNK17) {
+	//		msg->WriteUInt32(newSettings->voxel_unk17);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_UNK18) {
+	//		msg->WriteUInt32(newSettings->voxel_unk18);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_SLOTCATEGORY) {
+	//		msg->WriteUInt8(newSettings->voxel_slot_category);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_SANDBOXSCRIPT) {
+	//		msg->WriteUInt8(newSettings->voxel_sandbox_script);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_SAVEGROUPID) {
+	//		msg->WriteString(newSettings->voxel_savegroup_id);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_UNK22) {
+	//		msg->WriteUInt8(newSettings->voxel_unk22);
+	//	}
+	//	if (newSettings->voxelFlag & VOXELFLAG_UNK23) {
+	//		msg->WriteUInt8(newSettings->voxel_unk23);
+	//	}
+	//}
 	if (lowMidFlag & ROOM_LOWMID_UNK63) {
 		msg->WriteUInt8(newSettings->unk63);
 		for (size_t i = 0; i < newSettings->unk63; i++)
@@ -2646,10 +2794,12 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 	if (lowMidFlag & ROOM_LOWMID_ISZBCOMPETITIVE) {
 		msg->WriteUInt8(newSettings->isZbCompetitive);
 	}
-	// lowMid bits 30 (ZBAUTOHUNTING) and 31 (INTEGRATEDTEAM) have no handlers in the
-	// new client (sub_25B92C0). Client skips them; writing bytes here shifts the player list.
-	// if (lowMidFlag & ROOM_LOWMID_ZBAUTOHUNTING) { msg->WriteUInt8(newSettings->zbAutoHunting); }
-	// if (lowMidFlag & ROOM_LOWMID_INTEGRATEDTEAM) { msg->WriteUInt8(newSettings->integratedTeam); }
+	if (lowMidFlag & ROOM_LOWMID_ZBAUTOHUNTING) {
+		msg->WriteUInt8(newSettings->zbAutoHunting);
+	}
+	if (lowMidFlag & ROOM_LOWMID_INTEGRATEDTEAM) {
+		msg->WriteUInt8(newSettings->integratedTeam);
+	}
 	if (lowMidFlag & ROOM_LOWMID_UNK73) {
 		msg->WriteUInt8(newSettings->unk73);
 	}
@@ -2701,19 +2851,19 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 		msg->WriteString(newSettings->unk79_3);
 		msg->WriteUInt32(newSettings->unk79_4);
 	}
-	// highMid bits 10-13: new in this client (xmmwords 2D15048-2D15078)
-	if (highMidFlag & ROOM_HIGHMID_UNK_HM10) {
-		msg->WriteUInt8(0);
+
+	if (highMidFlag & ROOM_HIGHMID_ZSSPEEDRUN) {
+		msg->WriteUInt8(newSettings->m_bIsZSSpeedRun);
 	}
-	if (highMidFlag & ROOM_HIGHMID_UNK_HM11) {
-		msg->WriteUInt8(0);
+	if (highMidFlag & ROOM_HIGHMID_CHANGESHOT) {
+		msg->WriteUInt8(newSettings->m_bIsChangeShot);
 	}
-	if (highMidFlag & ROOM_HIGHMID_UNK_HM12) {
-		msg->WriteUInt8(0);
+	if (highMidFlag & ROOM_HIGHMID_ZOMBIEPERMADEATH) {
+		msg->WriteUInt8(newSettings->m_nZombiePermaDeath);
 	}
-	if (highMidFlag & ROOM_HIGHMID_UNK_HM13) {
-		msg->WriteUInt8(0); // two bytes for this one
-		msg->WriteUInt8(0);
+	if (highMidFlag & ROOM_HIGHMID_VIPROOM) {
+		msg->WriteUInt8(newSettings->m_nVipRoomUnk1);
+		msg->WriteUInt8(newSettings->m_nVipRoomUnk2);
 	}
 
 	if (highFlag & ROOM_HIGH_UNK77) {
@@ -2721,7 +2871,7 @@ void WriteSettings(CSendPacket* msg, CRoomSettings* newSettings, int low, int lo
 	}
 }
 
-void CPacketManager::SendRoomCreateAndJoin(IExtendedSocket* socket, IRoom* roomInfo, bool joining)
+void CPacketManager::SendRoomCreateAndJoin(IExtendedSocket* socket, IRoom* roomInfo)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::Room);
 	msg->BuildHeader();
@@ -3342,10 +3492,6 @@ void CPacketManager::SendDefaultItems(IExtendedSocket* socket, const vector<CUse
 				msg->WriteUInt8(i++);
 				msg->WriteUInt16(0);
 			}
-
-			// new client (2025): two extra uint32s after unk array (v63, v64 in sub_25987F0)
-			msg->WriteUInt32(0);
-			msg->WriteUInt32(0);
 		}
 	}
 	socket->Send(msg);
@@ -3362,31 +3508,14 @@ void CPacketManager::SendHostOnItemUse(IExtendedSocket* socket, int userId, int 
 	socket->Send(msg);
 }
 
-void CPacketManager::SendHostServerJoin(IExtendedSocket* socket, const std::string& ipString, int port, int userId)
+void CPacketManager::SendHostServerJoin(IExtendedSocket* socket, int ipAddress, int port, int userId)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::Host);
 	msg->BuildHeader();
 	msg->WriteUInt8(HostPacketType::HostServerJoin);
-	Logger().Warn("SendHostServerJoin: ip=%s port=%d userId=%d\n", ipString.c_str(), port, userId);
-	// Client decoder (sub_2590D80 case 5):
-	// 1. ReadString -> inet_addr(str) -> stored as network-order uint32 at a1+32
-	// 2. ReadUInt32 -> fallback raw IP (network byte order) -> a1+32 if string fails
-	// 3. ReadUInt16 -> port -> a1+36
-	// 4. ReadFloat+UInt32 (8 bytes) -> gamemode/map -> a1+40, a1+44
-	// Client needs IP in network byte order (big-endian bytes)
-	// inet_pton gives us the bytes directly, so write them as-is
-	struct in_addr addr;
-	inet_pton(AF_INET, ipString.c_str(), &addr);
-	msg->WriteString(ipString);              // IP string "x.x.x.x"
-	// Write the 4 bytes of the IP address directly (network byte order)
-	const unsigned char* ip_bytes = (const unsigned char*)&addr.s_addr;
-	msg->WriteUInt8(ip_bytes[0]);
-	msg->WriteUInt8(ip_bytes[1]);
-	msg->WriteUInt8(ip_bytes[2]);
-	msg->WriteUInt8(ip_bytes[3]);
-	msg->WriteUInt16(port);                  // port - write as big endian (client reads BE)
-	msg->WriteUInt32(0);                     // gamemode placeholder
-	msg->WriteUInt32(0);                     // map placeholder
+	msg->WriteUInt32(ipAddress, false);
+	msg->WriteUInt16(port);
+	msg->WriteUInt64(userId);
 	socket->Send(msg);
 }
 
@@ -3435,7 +3564,7 @@ void CPacketManager::SendHostUserInventory(IExtendedSocket* socket, int userId, 
 			msg->WriteUInt8(1);
 			msg->WriteUInt16(item.m_nPartSlot2);
 		}
-		msg->WriteUInt32(0); // unk +36
+		msg->WriteUInt32(0);
 	}
 
 	socket->Send(msg);
@@ -3445,17 +3574,13 @@ void CPacketManager::SendHostGameStart(IExtendedSocket* socket, int userId)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::Host);
 	msg->BuildHeader();
+
 	msg->WriteUInt8(HostPacketType::GameStart);
-	// Decoder (sub_2590D80 case 0):
-	// ReadUInt32 → a1+24 (userID/hostID)
-	// ReadUInt8  → serverCategory
-	// ReadUInt8  → enableNexonAnalytics
-	// Read 8 bytes (float+uint32) → a1+40, a1+44 (gameModeId, mapId)
-	msg->WriteUInt32(userId);  // hostID → a1+24
-	msg->WriteUInt8(0);        // serverCategory
-	msg->WriteUInt8(0);        // enableNexonAnalytics
-	msg->WriteUInt32(0);       // gameModeId (float) → a1+40
-	msg->WriteUInt32(0);       // mapId → a1+44
+	msg->WriteUInt32(userId);
+	msg->WriteUInt8(0); // server category /// @todo investigate
+	msg->WriteUInt8(0); // enable nexon analytics(it write every step on the map like kill event etc)
+	msg->WriteUInt64(5555); // unk
+
 	socket->Send(msg);
 }
 
@@ -3480,27 +3605,20 @@ void CPacketManager::SendHostJoin(IExtendedSocket* socket, IUser* host)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::Host);
 	msg->BuildHeader();
+
 	msg->WriteUInt8(HostPacketType::HostJoin);
-	// Decoder (sub_2590D80 case 1):
-	// ReadUInt32 → a1+24 (hostUserID)
-	// Read 8 bytes (float+uint32) → a1+40, a1+44 (gameModeId, mapId)
-	// ReadUInt32 → extIP
-	// ReadUInt16 → extClientPort
-	// ReadUInt16 → extServerPort
-	// ReadUInt32 → localIP
-	// ReadUInt16 → localClientPort
-	// ReadUInt16 → localServerPort
-	msg->WriteUInt32(host->GetID()); // hostUserID → a1+24
-	msg->WriteUInt32(0);             // gameModeId (float) → a1+40
-	msg->WriteUInt32(0);             // mapId → a1+44
+	msg->WriteUInt32(host->GetID());
+	msg->WriteUInt64(0); // что это?
 
 	UserNetworkConfig_s network = host->GetNetworkConfig();
-	msg->WriteUInt32(ip_string_to_int(network.m_szExternalIpAddress)); // extIP
+
+	msg->WriteUInt32(ip_string_to_int(network.m_szExternalIpAddress), false);
 	msg->WriteUInt16(network.m_nExternalClientPort);
 	msg->WriteUInt16(network.m_nExternalServerPort);
-	msg->WriteUInt32(ip_string_to_int(network.m_szLocalIpAddress));    // localIP
+	msg->WriteUInt32(ip_string_to_int(network.m_szLocalIpAddress), false);
 	msg->WriteUInt16(network.m_nLocalClientPort);
 	msg->WriteUInt16(network.m_nLocalServerPort);
+
 	socket->Send(msg);
 }
 
@@ -3751,32 +3869,37 @@ void CPacketManager::SendQuestUpdateQuestStat(IExtendedSocket* socket, int flag,
 
 void CPacketManager::SendFavoriteLoadout(IExtendedSocket* socket, int characterItemID, int currentLoadout, const vector<CUserLoadout>& loadouts)
 {
-    CSendPacket* msg = CreatePacket(socket, PacketId::Favorite);
-    msg->BuildHeader();
+	CSendPacket* msg = CreatePacket(socket, PacketId::Favorite);
+	msg->BuildHeader();
 
-    msg->WriteUInt8(FavoritePacketType::SetLoadout);
-    msg->WriteUInt16(characterItemID);
-    msg->WriteUInt8(currentLoadout);
-    msg->WriteUInt8(0);
-    msg->WriteUInt8(3);
-    msg->WriteUInt8(4);
-    msg->WriteUInt8(10);
+	msg->WriteUInt8(FavoritePacketType::SetLoadout);
+	msg->WriteUInt16(characterItemID);
+	msg->WriteUInt8(currentLoadout);
+	msg->WriteUInt8(LOADOUT_COUNT);
+	msg->WriteUInt8(LOADOUT_SLOT_COUNT); // items in loadout
+	msg->WriteUInt8(0);
 
-    static const uint16_t defaultItems[4] = { 24, 6, 161, 31 };
+	for (int i = 0; i < LOADOUT_COUNT; i++)
+	{
+		if (i < loadouts.size())
+		{
+			for (auto item : loadouts[i].items)
+			{
+				msg->WriteUInt16(item);
+			}
+		}
+		else
+		{
+			msg->WriteUInt16(12);
+			msg->WriteUInt16(2);
+			msg->WriteUInt16(161);
+			msg->WriteUInt16(31);
+		}
+	}
 
-    for (int i = 0; i < 3; i++)
-    {
-        for (int j = 0; j < 4; j++)
-        {
-            msg->WriteUInt8(0);
-            msg->WriteUInt16(defaultItems[j]);
-            for (int k = 1; k < 10; k++)
-                msg->WriteUInt16(0);
-        }
-    }
-
-    socket->Send(msg);
+	socket->Send(msg);
 }
+
 void CPacketManager::SendFavoriteFastBuy(IExtendedSocket* socket, const vector<CUserFastBuy>& fastbuy)
 {
 	CSendPacket* msg = CreatePacket(socket, PacketId::Favorite);
@@ -3832,12 +3955,14 @@ void CPacketManager::SendFavoriteBookmark(IExtendedSocket* socket, const vector<
 
 	msg->WriteUInt8(FavoritePacketType::SetBookmark);
 
-	msg->WriteUInt8(bookmark.size());              // First header byte: count
-	msg->WriteUInt8(bookmark.size() > 0 ? 1 : 0);  // Second header byte: items per group (from IDA)
-	
+	uint8_t GroupCount = 1;
+	uint8_t ItemsPerGroup = static_cast<uint8_t>(bookmark.size());
+	msg->WriteUInt8(GroupCount);
+	msg->WriteUInt8(ItemsPerGroup);
+
 	for (auto itemID : bookmark)
 	{
-		msg->WriteUInt16(itemID);
+		msg->WriteUInt16(static_cast<uint16_t>(itemID));
 	}
 
 	socket->Send(msg);
@@ -7396,212 +7521,5 @@ void CPacketManager::SendVoxelUnk58(IExtendedSocket* socket)
 
 	msg->WriteUInt8(6);
 
-	socket->Send(msg);
-}
-void CPacketManager::SendUserStartStep(IExtendedSocket* socket)
-{
-	CSendPacket* msg = CreatePacket(socket, PacketId::UserStartStep);
-	msg->BuildHeader();
-	msg->WriteUInt8(0);
-	socket->Send(msg);
-}
-
-void CPacketManager::SendClanTotalWar(IExtendedSocket* socket, int subtype)
-{
-	CSendPacket* msg = CreatePacket(socket, PacketId::ClanTotalWar);
-	msg->BuildHeader();
-	msg->WriteUInt8(subtype);
-	switch (subtype)
-	{
-	case 12:
-		// sub_2083910: uint16, uint8, uint32, uint32, uint32, uint32, then sub_2081580: uint8 count
-		msg->WriteUInt16(0); // warID
-		msg->WriteUInt8(0);  // flag
-		msg->WriteUInt32(0); // field1
-		msg->WriteUInt32(0); // field2
-		msg->WriteUInt32(0); // size
-		msg->WriteUInt32(0); // field3
-		msg->WriteUInt8(0);  // sub_2081580 count=0, no entries
-		break;
-	default:
-		break;
-	}
-	socket->Send(msg);
-}
-
-void CPacketManager::SendExpedition(IExtendedSocket* socket, int subtype)
-{
-	CSendPacket* msg = CreatePacket(socket, PacketId::Expedition);
-	msg->BuildHeader();
-	msg->WriteUInt8(subtype);
-	socket->Send(msg);
-}
-
-void CPacketManager::SendVipSystem(IExtendedSocket* socket, int subtype, const UserVip& vip)
-{
-	// Calculate vipLevel from vipExp using configured tiers
-	int currentRank = 0;
-	if (g_pServerConfig && !g_pServerConfig->vipTiers.empty())
-	{
-		for (int i = (int)g_pServerConfig->vipTiers.size() - 1; i >= 0; i--)
-		{
-			if (vip.vipExp >= g_pServerConfig->vipTiers[i].pointsRequired)
-			{
-				currentRank = i;
-				break;
-			}
-		}
-	}
-
-	// Next rank = currentRank + 1 (capped at max)
-	int nextRank = currentRank;
-	if (g_pServerConfig && currentRank < (int)g_pServerConfig->vipTiers.size() - 1)
-		nextRank = currentRank + 1;
-
-	CSendPacket* msg = CreatePacket(socket, PacketId::VipSystem);
-	msg->BuildHeader();
-	msg->WriteUInt8(subtype);
-	switch (subtype)
-	{
-	case 0:
-		// Structure from Korean server capture:
-		// Korean server sends entryCount=0 (no bar segment entries)
-		// The bar threshold markers come purely from case 8 +20 field (ptsRequired)
-		msg->WriteUInt8(currentRank);
-		msg->WriteUInt32(vip.vipExp);   // payments last 90 days
-		msg->WriteUInt32(0);            // totalCashSpent = 0 (Korean server sends 0 here)
-		msg->WriteUInt8(nextRank);
-		msg->WriteUInt8(currentRank);   // unknown flag = currentRank (matches Korean server)
-		msg->WriteUInt8(0);             // entryCount = 0
-		break;
-	case 8:
-	{
-		// From Korean server packet capture - exact structure:
-		// rankID(1) + mileage(4) + subCount(1) + N*item(1) + flags(8) + ptsRequired(4)
-		// Real Korean tier data: 0,50,200,750,4000,10000,10000,25000 pts
-		// Real mileage: 0,100,2000,5000,10000,15000,20000,25000
-		// Note: entry 1 has rankID=0 (not 1) - acts as Bronze threshold marker with rankID reused
-		// Flags: flag[0]=+25, flag[1]=+24, flag[2]=+26, flag[3]=+27, flag[4]=+28, flag[5]=+30, flag[6]=+31, flag[7]=+32
-		
-		// Korean server's exact 8 entries:
-		struct VipEntry {
-			uint8_t rankId;
-			uint32_t mileage;
-			std::vector<uint8_t> items;
-			uint8_t flags[8];
-			uint32_t ptsRequired;
-		};
-		
-		int tierCount = g_pServerConfig ? (int)g_pServerConfig->vipTiers.size() : 0;
-		
-		for (int i = 0; i < 8; i++)
-		{
-			const CServerConfig::VipTier* tier = (g_pServerConfig && i < tierCount)
-				? &g_pServerConfig->vipTiers[i] : nullptr;
-			
-			// rankID: entry 0 and 1 both use rankID=0 (matches Korean server), rest match index
-			uint8_t rankId = (i <= 1) ? 0 : (uint8_t)i;
-			msg->WriteUInt8(rankId);
-			msg->WriteUInt32(tier ? (uint32_t)tier->mileagePayback : 0);
-			
-			// sub-items: descending list from (i-1) down to 1
-			// tier 0,1: no items; tier 2: [1]; tier 3: [1]; tier 4: [2,1]; tier 5: [3,2,1]; etc.
-			int subCount = (i <= 1) ? 0 : (i >= 7 ? 6 : (i - 1));
-			// Korean: tier2=0 items, tier3=1 item, tier4=2, tier5=3, tier6=4, tier7=6
-			static const uint8_t koreanSubCounts[8] = {0, 0, 0, 1, 2, 3, 4, 6};
-			subCount = koreanSubCounts[i];
-			msg->WriteUInt8(subCount);
-			for (int j = subCount; j >= 1; j--)
-				msg->WriteUInt8((uint8_t)j);
-			
-			// 8 flag bytes (+25,+24,+26,+27,+28,+30,+31,+32)
-			// From capture: tier 0-1: all zeros; tier 2+: +24=1,+26=1; higher tiers add more
-			msg->WriteUInt8(tier ? tier->unk25          : 0);
-			msg->WriteUInt8(tier ? tier->unk24          : 0);
-			msg->WriteUInt8(tier ? tier->zombieScenario : 0);
-			msg->WriteUInt8(tier ? tier->loginSupplies  : 0);
-			msg->WriteUInt8(tier ? tier->unk28          : 0);
-			msg->WriteUInt8(tier ? tier->unk30          : 0);
-			msg->WriteUInt8(tier ? tier->unk31          : 0);
-			msg->WriteUInt8(tier ? tier->unk32          : 0);
-			
-			// ptsRequired: client stores as (float)(uint32) and uses for bar threshold markers
-			msg->WriteUInt32(tier ? (uint32_t)tier->pointsRequired : 0);
-		}
-		break;
-	}
-	case 9: // login time - send count=0 (empty list)
-		msg->WriteUInt8(0);
-		break;
-	case 11:
-	{
-		// Case 11 from IDA: ReadUInt16(count), loop: ReadUInt32+ReadUInt32+ReadUInt32+ReadUInt8
-		// Populates global bar threshold list - drives the Cash bar tier markers
-		// Block[0]=threshold, Block[1]=threshold, Block[2]=nextThreshold, Block[3]=flag
-		int tierCount = g_pServerConfig ? (int)g_pServerConfig->vipTiers.size() : 0;
-		msg->WriteUInt16(tierCount);
-		for (int i = 0; i < tierCount; i++)
-		{
-			int pts     = g_pServerConfig ? g_pServerConfig->vipTiers[i].pointsRequired : 0;
-			int nextPts = (g_pServerConfig && i + 1 < tierCount) ? g_pServerConfig->vipTiers[i + 1].pointsRequired : pts;
-			msg->WriteUInt32(pts);      // Block[0]
-			msg->WriteUInt32(pts);      // Block[1]
-			msg->WriteUInt32(nextPts);  // Block[2]
-			msg->WriteUInt8(i);         // Block[3] = rank index as flag
-		}
-		break;
-	}
-	default:
-		break;
-	}
-	socket->Send(msg);
-}
-
-void CPacketManager::SendScenarioTX(IExtendedSocket* socket, int subtype)
-{
-	CSendPacket* msg = CreatePacket(socket, PacketId::ScenarioTX);
-	msg->BuildHeader();
-	msg->WriteUInt8(subtype);
-	socket->Send(msg);
-}
-
-void CPacketManager::SendRibbonSystem(IExtendedSocket* socket, int subtype)
-{
-	CSendPacket* msg = CreatePacket(socket, PacketId::RibbonSystem);
-	msg->BuildHeader();
-	msg->WriteUInt8(subtype);
-	socket->Send(msg);
-}
-
-void CPacketManager::SendHonorShop(IExtendedSocket* socket, int subtype)
-{
-	CSendPacket* msg = CreatePacket(socket, PacketId::HonorShop);
-	msg->BuildHeader();
-	msg->WriteUInt8(subtype);
-	socket->Send(msg);
-}
-
-void CPacketManager::SendMileageShop(IExtendedSocket* socket, int subtype)
-{
-	CSendPacket* msg = CreatePacket(socket, PacketId::MileageShop);
-	msg->BuildHeader();
-	msg->WriteUInt8(subtype);
-	socket->Send(msg);
-}
-
-void CPacketManager::SendQuestBadgeShop(IExtendedSocket* socket, int subtype)
-{
-	CSendPacket* msg = CreatePacket(socket, PacketId::QuestBadgeShop);
-	msg->BuildHeader();
-	msg->WriteUInt8(subtype);
-	socket->Send(msg);
-}
-
-void CPacketManager::SendRecommendedRooms(IExtendedSocket* socket)
-{
-	CSendPacket* msg = CreatePacket(socket, PacketId::Room);
-	msg->BuildHeader();
-	msg->WriteUInt8(26);
-	msg->WriteUInt8(0);
 	socket->Send(msg);
 }

@@ -71,7 +71,7 @@ public:
 	void ClearKickedUsers();
 	void KickUser(IUser* user);
 	void VoteKick(IUser* user, bool kick);
-	void SendJoinNewRoom(IUser* user, bool joining = false);
+	void SendJoinNewRoom(IUser* user);
 	void SendRoomSettings(IUser* user);
 	void SendUpdateRoomSettings(IUser* user, CRoomSettings* settings, int lowFlag, int lowMidFlag, int highMidFlag, int highFlag);
 	void SendRoomUsersReadyStatus(IUser* user);

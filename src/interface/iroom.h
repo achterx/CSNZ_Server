@@ -59,7 +59,7 @@ public:
 	virtual void ClearKickedUsers() = 0;
 	virtual void KickUser(IUser* user) = 0;
 	virtual void VoteKick(IUser* user, bool kick) = 0;
-	virtual void SendJoinNewRoom(IUser* user, bool joining = false) = 0;
+	virtual void SendJoinNewRoom(IUser* user) = 0;
 	virtual void SendRoomSettings(IUser* user) = 0;
 	virtual void SendUpdateRoomSettings(IUser* user, CRoomSettings* settings, int lowFlag, int lowMidFlag, int highMidFlag, int highFlag) = 0;
 	virtual void SendRoomUsersReadyStatus(IUser* user) = 0;
