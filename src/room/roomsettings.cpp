@@ -1305,7 +1305,7 @@ void CRoomSettings::LoadDefaultSettings(int gameModeId, int mapId)
 	zbRespawn = GetDefaultZbRespawn(gameModeId);
 	zbBalance = GetDefaultZbBalance(gameModeId);
 	gameRule = gameModeId == 40 ? 1 : 0;
-isZbCompetitive = (mapId == 282 && (gameModeId == 8 || gameModeId == 9 || gameModeId == 14)) ? 1 : 0;
+isZbCompetitive = 0;
 	zbAutoHunting = 0;
 	integratedTeam = 0;
 	unk73 = 0;
@@ -2222,7 +2222,7 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 		ballNumber = GetMapSetting(mapId, "ball_default");
 
 		lowMidFlag |= ROOM_LOWMID_ISZBCOMPETITIVE;
-isZbCompetitive = (mapId == 282 && (gameModeId == 8 || gameModeId == 9 || gameModeId == 14)) ? 1 : 0;
+isZbCompetitive = 0
 		if (isZbCompetitive)
 			LoadZbCompetitiveSettings(gameModeId);
 	}
