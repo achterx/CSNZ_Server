@@ -53,6 +53,7 @@ CRoomSettings::CRoomSettings(Buffer& inPacket) // unfinished
 	}
 	if (lowFlag & ROOM_LOW_MAPID) {
 		mapId = inPacket.readUInt16_LE();
+		if (mapId == 282) mapId = 0; // block ZB competitive dummy map
 	}
 	if (lowFlag & ROOM_LOW_MAXPLAYERS) {
 		maxPlayers = inPacket.readUInt8();
