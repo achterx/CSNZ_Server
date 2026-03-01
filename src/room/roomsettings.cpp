@@ -1,4 +1,4 @@
-﻿#include "roomsettings.h"
+#include "roomsettings.h"
 #include "definitions.h"
 #include "manager/userdatabase.h"
 
@@ -329,7 +329,7 @@ CRoomSettings::CRoomSettings(Buffer& inPacket) // unfinished
 		superRoom = inPacket.readUInt8();
 	}
 	if (lowMidFlag & ROOM_LOWMID_ISZBCOMPETITIVE) {
-		isZbCompetitive = inPacket.readUInt8();
+		inPacket.readUInt8(); isZbCompetitive = 0; // disabled
 	}
 	if (lowMidFlag & ROOM_LOWMID_ZBAUTOHUNTING) {
 		zbAutoHunting = inPacket.readUInt8();
@@ -1305,7 +1305,7 @@ void CRoomSettings::LoadDefaultSettings(int gameModeId, int mapId)
 	zbRespawn = GetDefaultZbRespawn(gameModeId);
 	zbBalance = GetDefaultZbBalance(gameModeId);
 	gameRule = gameModeId == 40 ? 1 : 0;
-isZbCompetitive = 0;
+	isZbCompetitive = 0;
 	zbAutoHunting = 0;
 	integratedTeam = 0;
 	unk73 = 0;
@@ -2222,7 +2222,8 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 		ballNumber = GetMapSetting(mapId, "ball_default");
 
 		lowMidFlag |= ROOM_LOWMID_ISZBCOMPETITIVE;
-isZbCompetitive = 0
+		isZbCompetitive = 0;
+
 		if (isZbCompetitive)
 			LoadZbCompetitiveSettings(gameModeId);
 	}
