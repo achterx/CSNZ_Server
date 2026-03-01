@@ -1331,13 +1331,6 @@ void CRoomSettings::LoadDefaultSettings(int gameModeId, int mapId)
 	if (!killLimit)
 		killLimit = GetGameModeDefaultSetting(gameModeId, "mode_kill_limit_id");
 
-	if (isZbCompetitive)
-	{
-		maxPlayers = 32;
-		winLimit = gameModeId == 14 ? 7 : 13;
-		roundTime = 3;
-	}
-
 	if (familyBattle)
 		LoadFamilyBattleSettings(gameModeId);
 
@@ -2223,9 +2216,6 @@ void CRoomSettings::LoadNewSettings(int gameModeId, int mapId, IUser* user)
 
 		lowMidFlag |= ROOM_LOWMID_ISZBCOMPETITIVE;
 		isZbCompetitive = 0;
-
-		if (isZbCompetitive)
-			LoadZbCompetitiveSettings(gameModeId);
 	}
 	else if (g_pServerConfig->room.validateSettings)
 	{
