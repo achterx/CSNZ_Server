@@ -9,7 +9,7 @@ on:
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: windows-2022
     
     steps:
     - name: Checkout code
@@ -22,9 +22,6 @@ jobs:
 
     - name: Set up MSVC Developer Command Prompt
       uses: ilammy/msvc-dev-cmd@v1
-
-    - name: Configure CMake
-      run: cmake -G "Visual Studio 17 2022" -A x64 -S src -B build
 
     
     - name: Setup CMake
