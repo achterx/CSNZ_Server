@@ -19,6 +19,13 @@ jobs:
     
     - name: Setup MSVC
       uses: microsoft/setup-msbuild@v2
+
+      - name: Set up MSVC Developer Command Prompt
+  uses: ilammy/msvc-dev-cmd@v1
+
+- name: Configure CMake
+  run: cmake -G "Visual Studio 17 2022" -A x64 -S src -B build
+
     
     - name: Setup CMake
       uses: lukka/get-cmake@latest
